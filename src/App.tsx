@@ -14,20 +14,44 @@ interface WeatherCardProps {
   hostContext?: McpUiHostContext
 }
 
-interface WeatherDailyData {
-  time: string[]
-  temperature_2m_min: number[]
-  temperature_2m_max: number[]
-  weather_code: number[]
-  precipitation_probability_max: number[]
-  rain_sum: number[]
-  precipitation_hours: number[]
-  wind_speed_10m_max: number[]
-  wind_gusts_10m_max: number[]
+interface WeatherInfo {
+  code: number
+  text: string
+  text_zh: string
+  icon: string
+}
+
+interface TemperatureInfo {
+  min: number
+  max: number
+  unit: string
+}
+
+interface RainInfo {
+  probability: number
+  hours: number
+  sum: number
+  unit: string
+}
+
+interface WindInfo {
+  speed: number
+  gust: number
+  unit: string
+}
+
+interface ForecastDay {
+  date: string
+  weather: WeatherInfo
+  temperature: TemperatureInfo
+  rain: RainInfo
+  wind: WindInfo
 }
 
 interface WeatherData {
-  daily: WeatherDailyData
+  timezone: string
+  elevation: number
+  forecast: ForecastDay[]
 }
 
 function parseWeatherData(result: CallToolResult | null): WeatherData | null {
@@ -42,25 +66,15 @@ function parseWeatherData(result: CallToolResult | null): WeatherData | null {
     return structuredContent
   }
 
-  const textPayload = result.content.find((item) => item.type === "text")?.text
-
-  if (!textPayload) {
-    return null
-  }
-
-  try {
-    return JSON.parse(textPayload) as WeatherData
-  } catch {
-    return null
-  }
+  return null
 }
 
 const WeatherCard = ({ toolResult }: WeatherCardProps) => {
   const weatherData = parseWeatherData(toolResult)
-  const daily = weatherData?.daily
-  const hasForecast = Boolean(daily?.time?.length)
+  const forecast = weatherData?.forecast
+  const hasForecast = Boolean(forecast?.length)
 
-  if (!daily || !hasForecast) {
+  if (!forecast || !hasForecast) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
@@ -79,7 +93,7 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Next 7 Days
+            {weatherData?.timezone ?? "Local"} · {weatherData?.elevation ?? 0} m
           </p>
           <h2 className="mt-1 text-xl font-semibold text-slate-900">Weather Forecast</h2>
         </div>
@@ -89,41 +103,41 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-2">
-        {daily.time.slice(0, 7).map((date, index) => (
-          <article className="rounded-xl border border-slate-200 bg-slate-50 p-4" key={date}>
-            <div className="text-sm font-semibold text-slate-900">{date}</div>
-            <div className="mt-2 text-lg font-semibold text-slate-900">
-              {daily.temperature_2m_min[index]}°C ~ {daily.temperature_2m_max[index]}°C
+        {forecast.slice(0, 7).map((day) => (
+          <article className="rounded-xl border border-slate-200 bg-slate-50 p-4" key={day.date}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold text-slate-900">{day.date}</div>
+              <div className="text-2xl leading-none">{day.weather.icon}</div>
             </div>
+            <div className="mt-2 text-lg font-semibold text-slate-900">
+              {day.temperature.min}°C ~ {day.temperature.max}°C
+            </div>
+            <div className="mt-1 text-sm text-slate-600">{day.weather.text_zh}</div>
             <div className="mt-3 space-y-1 text-sm text-slate-600">
               <div className="flex items-center justify-between gap-3">
-                <span>Weather Code</span>
-                <strong className="font-medium text-slate-900">{daily.weather_code[index]}</strong>
-              </div>
-              <div className="flex items-center justify-between gap-3">
                 <span>Rain Probability</span>
-                <strong className="font-medium text-slate-900">
-                  {daily.precipitation_probability_max[index]}%
-                </strong>
+                <strong className="font-medium text-slate-900">{day.rain.probability}%</strong>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Rainfall</span>
-                <strong className="font-medium text-slate-900">{daily.rain_sum[index]} mm</strong>
+                <strong className="font-medium text-slate-900">
+                  {day.rain.sum} {day.rain.unit}
+                </strong>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Rain Duration</span>
-                <strong className="font-medium text-slate-900">{daily.precipitation_hours[index]} h</strong>
+                <strong className="font-medium text-slate-900">{day.rain.hours} h</strong>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Max Wind Speed</span>
                 <strong className="font-medium text-slate-900">
-                  {daily.wind_speed_10m_max[index]} km/h
+                  {day.wind.speed} {day.wind.unit}
                 </strong>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Max Gusts</span>
                 <strong className="font-medium text-slate-900">
-                  {daily.wind_gusts_10m_max[index]} km/h
+                  {day.wind.gust} {day.wind.unit}
                 </strong>
               </div>
             </div>
