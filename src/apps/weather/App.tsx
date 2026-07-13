@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { Button, Field, Input } from "@headlessui/react"
+import { Button, Input } from "@headlessui/react"
 
 import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
@@ -137,9 +137,8 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
 }
 
 export default function App() {
-  const [locationInput, setLocationInput] = useState("")
-  const [requestedLocation, setRequestedLocation] = useState<string | null>(null)
-  const [weatherResult, setWeatherResult] = useState<CallToolResult | null>(null)
+  const [location, setLocation] = useState("")
+  const [result, setResult] = useState<CallToolResult | null>(null)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [isQuerying, setIsQuerying] = useState(false)
 
@@ -153,36 +152,11 @@ export default function App() {
       return {}
     },
     onToolInput: async (input: unknown) => {
-      const nextLocation = (() => {
-        if (typeof input === "string") {
-          return input.trim()
-        }
-
-        if (typeof input === "object" && input !== null) {
-          const maybeInput = input as {
-            location?: unknown
-            arguments?: { location?: unknown }
-          }
-
-          if (typeof maybeInput.location === "string") {
-            return maybeInput.location.trim()
-          }
-
-          if (typeof maybeInput.arguments?.location === "string") {
-            return maybeInput.arguments.location.trim()
-          }
-        }
-
-        return null
-      })()
-
-      if (nextLocation) {
-        void searchWeather(nextLocation)
-      }
+      console.info("Received tool input:", input)
     },
     onToolResult: async (result) => {
       console.info("Received tool call result:", result)
-      setWeatherResult(result)
+      setResult(result)
       setIsQuerying(false)
     },
     onToolCancelled: (params) => {
@@ -193,21 +167,10 @@ export default function App() {
     },
   })
 
-  const searchWeather = async (nextLocation: string) => {
-    if (!app) {
-      return
-    }
+  const searchWeather = async () => {
+    if (!app) return
 
-    const trimmedLocation = nextLocation.trim()
-
-    if (!trimmedLocation) {
-      setRequestError("Please enter a location")
-      return
-    }
-
-    setLocationInput(trimmedLocation)
-    setRequestedLocation(trimmedLocation)
-    setWeatherResult(null)
+    setResult(null)
     setRequestError(null)
     setIsQuerying(true)
 
@@ -215,21 +178,16 @@ export default function App() {
       const result = await app.callServerTool({
         name: "weather",
         arguments: {
-          location: trimmedLocation,
+          location: location.trim(),
         },
       })
 
-      setWeatherResult(result)
+      setResult(result)
       setIsQuerying(false)
     } catch (err) {
       setRequestError(err instanceof Error ? err.message : "Failed to fetch weather information")
       setIsQuerying(false)
     }
-  }
-
-  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    void searchWeather(locationInput)
   }
 
   if (error) {
@@ -260,16 +218,21 @@ export default function App() {
             Enter a location and I will look up the weather forecast for you.
           </p>
 
-          <form className="mt-5 flex flex-col gap-3 sm:flex-row" onSubmit={handleSubmit}>
-            <Field className="flex-1">
-              <Input
-                value={locationInput}
-                onChange={(event) => setLocationInput(event.target.value)}
-                placeholder="e.g. Beijing, Shanghai, Tokyo"
-                aria-label="Enter a location"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-              />
-            </Field>
+          <form
+            className="mt-5 flex flex-col gap-3 sm:flex-row"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void searchWeather()
+            }}
+          >
+            <Input
+              required
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              placeholder="e.g. Beijing, Shanghai, Tokyo"
+              aria-label="Enter a location"
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+            />
             <Button
               type="submit"
               disabled={isQuerying}
@@ -280,24 +243,15 @@ export default function App() {
           </form>
         </section>
 
-        {isQuerying && !weatherResult ? (
-          <StateSection
-            title="Searching"
-            message={
-              requestedLocation
-                ? `Searching the weather for ${requestedLocation}…`
-                : "Enter a location to get started"
-            }
-          />
+        {isQuerying && !result ? (
+          <StateSection title="Searching" message="Fetching the weather forecast…" />
         ) : null}
 
         {requestError ? (
           <StateSection title="Request Failed" message={requestError} tone="error" />
         ) : null}
 
-        {weatherResult ? (
-          <WeatherCard app={app} toolResult={weatherResult} hostContext={hostContext} />
-        ) : null}
+        {result ? <WeatherCard app={app} toolResult={result} hostContext={hostContext} /> : null}
       </main>
     </div>
   )

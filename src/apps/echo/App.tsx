@@ -71,13 +71,17 @@ export default function App() {
   }
 
   return (
-    <div className="container">
-      <div className="card">
-        <h2>MCP App</h2>
-        <p>Connected to the host. Waiting for a tool result.</p>
-      </div>
+    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
+      <main className="flex flex-col gap-4">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Echo</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Response from the server will be displayed below.
+          </p>
+        </section>
 
-      {result ? <EchoCard app={app} toolResult={result} hostContext={hostContext} /> : null}
+        {result ? <EchoCard app={app} toolResult={result} hostContext={hostContext} /> : null}
+      </main>
     </div>
   )
 }
