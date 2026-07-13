@@ -63,7 +63,7 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
 
   if (!forecast || !hasForecast) {
     return (
-      <ResultCard title="Weather Forecast" status="Loading">
+      <ResultCard title="Weather Forecast">
         <p className="text-sm text-slate-600">
           Fetching the latest weather information from the server…
         </p>
