@@ -5,7 +5,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
 
 import { useMcpApp } from "@/shared/hooks/useMcpApp"
 import { parseToolResult } from "@/shared/utils"
-import { MessageCard, StateSection } from "@/shared/components"
+import { AppLayout, InputCard, MessageCard, ResultCard, StateSection } from "@/shared/components"
 
 import "./App.css"
 
@@ -25,12 +25,11 @@ const EchoCard = ({ toolResult }: EchoCardProps) => {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="mt-3 text-xl font-semibold text-slate-900">Echo Result</h2>
-      <pre className="mt-1 overflow-x-auto text-sm text-slate-600">
+    <ResultCard title="Echo Result">
+      <pre className="overflow-x-auto text-sm text-slate-600">
         {JSON.stringify(echoData, null, 2)}
       </pre>
-    </section>
+    </ResultCard>
   )
 }
 
@@ -71,17 +70,9 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
-      <main className="flex flex-col gap-4">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mt-3 text-xl font-semibold text-slate-900">Echo</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Response from the server will be displayed below.
-          </p>
-        </section>
-
-        {result ? <EchoCard app={app} toolResult={result} hostContext={hostContext} /> : null}
-      </main>
-    </div>
+    <AppLayout>
+      <InputCard title="Echo" description="Response from the server will be displayed below." />
+      {result ? <EchoCard app={app} toolResult={result} hostContext={hostContext} /> : null}
+    </AppLayout>
   )
 }

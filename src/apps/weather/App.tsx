@@ -1,13 +1,12 @@
 import { useState } from "react"
 
 import { Button, Input } from "@headlessui/react"
-
 import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
 
 import { useMcpApp } from "@/shared/hooks/useMcpApp"
 import { parseToolResult } from "@/shared/utils"
-import { MessageCard, StateSection } from "@/shared/components"
+import { AppLayout, InputCard, MessageCard, ResultCard, StateSection } from "@/shared/components"
 
 import "./App.css"
 
@@ -64,33 +63,21 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
 
   if (!forecast || !hasForecast) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-          Loading
-        </div>
-        <h2 className="mt-3 text-xl font-semibold text-slate-900">Weather Forecast</h2>
-        <p className="mt-2 text-sm text-slate-600">
+      <ResultCard title="Weather Forecast" status="Loading">
+        <p className="text-sm text-slate-600">
           Fetching the latest weather information from the server…
         </p>
-      </section>
+      </ResultCard>
     )
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            {weatherData?.timezone ?? "Local"} · {weatherData?.elevation ?? 0} m
-          </p>
-          <h2 className="mt-1 text-xl font-semibold text-slate-900">Weather Forecast</h2>
-        </div>
-        <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-          Live
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
+    <ResultCard
+      title="Weather Forecast"
+      meta={`${weatherData?.timezone ?? "Local"} · ${weatherData?.elevation ?? 0} m`}
+      status="Live"
+    >
+      <div className="grid gap-3 md:grid-cols-2">
         {forecast.slice(0, 7).map((day) => (
           <article className="rounded-xl border border-slate-200 bg-slate-50 p-4" key={day.date}>
             <div className="flex items-center justify-between gap-3">
@@ -132,7 +119,7 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
           </article>
         ))}
       </div>
-    </section>
+    </ResultCard>
   )
 }
 
@@ -207,52 +194,45 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
-      <main className="flex flex-col gap-4">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-            Waiting for Input
-          </div>
-          <h2 className="mt-3 text-xl font-semibold text-slate-900">Weather Lookup</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Enter a location and I will look up the weather forecast for you.
-          </p>
-
-          <form
-            className="mt-5 flex flex-col gap-3 sm:flex-row"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void searchWeather()
-            }}
+    <AppLayout>
+      <InputCard
+        title="Weather Lookup"
+        description="Enter a location and I will look up the weather forecast for you."
+      >
+        <form
+          className="mt-5 flex flex-col gap-3 sm:flex-row"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void searchWeather()
+          }}
+        >
+          <Input
+            required
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
+            placeholder="e.g. Beijing, Shanghai, Tokyo"
+            aria-label="Enter a location"
+            className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+          />
+          <Button
+            type="submit"
+            disabled={isQuerying}
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            <Input
-              required
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="e.g. Beijing, Shanghai, Tokyo"
-              aria-label="Enter a location"
-              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-            />
-            <Button
-              type="submit"
-              disabled={isQuerying}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isQuerying ? "Searching..." : "Search Weather"}
-            </Button>
-          </form>
-        </section>
+            {isQuerying ? "Searching..." : "Search Weather"}
+          </Button>
+        </form>
+      </InputCard>
 
-        {isQuerying && !result ? (
-          <StateSection title="Searching" message="Fetching the weather forecast…" />
-        ) : null}
+      {isQuerying && !result ? (
+        <StateSection title="Searching" message="Fetching the weather forecast…" />
+      ) : null}
 
-        {requestError ? (
-          <StateSection title="Request Failed" message={requestError} tone="error" />
-        ) : null}
+      {requestError ? (
+        <StateSection title="Request Failed" message={requestError} tone="error" />
+      ) : null}
 
-        {result ? <WeatherCard app={app} toolResult={result} hostContext={hostContext} /> : null}
-      </main>
-    </div>
+      {result ? <WeatherCard app={app} toolResult={result} hostContext={hostContext} /> : null}
+    </AppLayout>
   )
 }
