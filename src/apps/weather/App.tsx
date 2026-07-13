@@ -1,12 +1,15 @@
 import { useState } from "react"
 
 import { Button, Field, Input } from "@headlessui/react"
+
 import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
 
-import { useMcpApp } from "@/hooks"
+import { useMcpApp } from "@/shared/hooks/useMcpApp"
+import { parseToolResult } from "@/shared/utils"
+import { MessageCard, StateSection } from "@/shared/components"
 
-import "@/App.css"
+import "./App.css"
 
 interface WeatherCardProps {
   app: McpApp
@@ -48,29 +51,14 @@ interface ForecastDay {
   wind: WindInfo
 }
 
-interface WeatherData {
+interface WeatherResult {
   timezone: string
   elevation: number
   forecast: ForecastDay[]
 }
 
-function parseWeatherData(result: CallToolResult | null): WeatherData | null {
-  if (!result) {
-    return null
-  }
-
-  const structuredContent = (result as CallToolResult & { structuredContent?: WeatherData })
-    .structuredContent
-
-  if (structuredContent && typeof structuredContent === "object") {
-    return structuredContent
-  }
-
-  return null
-}
-
 const WeatherCard = ({ toolResult }: WeatherCardProps) => {
-  const weatherData = parseWeatherData(toolResult)
+  const weatherData = parseToolResult<WeatherResult>(toolResult)
   const forecast = weatherData?.forecast
   const hasForecast = Boolean(forecast?.length)
 
@@ -148,7 +136,7 @@ const WeatherCard = ({ toolResult }: WeatherCardProps) => {
   )
 }
 
-function App() {
+export default function App() {
   const [locationInput, setLocationInput] = useState("")
   const [requestedLocation, setRequestedLocation] = useState<string | null>(null)
   const [weatherResult, setWeatherResult] = useState<CallToolResult | null>(null)
@@ -157,7 +145,7 @@ function App() {
 
   const { app, error, hostContext } = useMcpApp({
     appInfo: {
-      name: "get-weather",
+      name: "weather",
       version: "1.0.0",
     },
     onTeardown: async () => {
@@ -239,42 +227,24 @@ function App() {
     }
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     void searchWeather(locationInput)
   }
 
-  const renderState = (title: string, message: string, tone: "default" | "error" = "default") => (
-    <section
-      className={`rounded-2xl border p-6 shadow-sm ${
-        tone === "error" ? "border-rose-200 bg-rose-50" : "border-slate-200 bg-white"
-      }`}
-    >
-      <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-        {tone === "error" ? "Error" : "Waiting for Input"}
-      </div>
-      <h2 className="mt-3 text-xl font-semibold text-slate-900">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{message}</p>
-    </section>
-  )
-
   if (error) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
-        <main className="flex flex-1 items-center justify-center">
-          {renderState("Connection Failed", error.message, "error")}
-        </main>
-      </div>
+      <MessageCard>
+        <StateSection title="Connection Error" message={error.message} tone="error" />
+      </MessageCard>
     )
   }
 
   if (!app) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
-        <main className="flex flex-1 items-center justify-center">
-          {renderState("Connecting", "Establishing connection with the host…")}
-        </main>
-      </div>
+      <MessageCard>
+        <StateSection title="Connecting" message="Establishing connection with the host…" />
+      </MessageCard>
     )
   }
 
@@ -310,16 +280,20 @@ function App() {
           </form>
         </section>
 
-        {isQuerying && !weatherResult
-          ? renderState(
-              "Searching",
+        {isQuerying && !weatherResult ? (
+          <StateSection
+            title="Searching"
+            message={
               requestedLocation
                 ? `Searching the weather for ${requestedLocation}…`
-                : "Enter a location to get started",
-            )
-          : null}
+                : "Enter a location to get started"
+            }
+          />
+        ) : null}
 
-        {requestError ? renderState("Request Failed", requestError, "error") : null}
+        {requestError ? (
+          <StateSection title="Request Failed" message={requestError} tone="error" />
+        ) : null}
 
         {weatherResult ? (
           <WeatherCard app={app} toolResult={weatherResult} hostContext={hostContext} />
@@ -328,5 +302,3 @@ function App() {
     </div>
   )
 }
-
-export default App

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 
-import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import { useApp } from "@modelcontextprotocol/ext-apps/react"
+
+import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
 
 type OnToolInput = NonNullable<McpApp["ontoolinput"]>
@@ -16,9 +17,7 @@ interface UseMcpAppOptions {
     name: string
     version: string
   }
-
   capabilities?: Record<string, unknown>
-
   onToolInput?: OnToolInput
   onToolResult?: OnToolResult
   onToolCancelled?: OnToolCancelled
@@ -27,7 +26,7 @@ interface UseMcpAppOptions {
   onError?: OnError
 }
 
-export function useMcpApp({
+export const useMcpApp = ({
   appInfo,
   capabilities = {},
   onToolInput,
@@ -36,7 +35,7 @@ export function useMcpApp({
   onHostContextChanged,
   onTeardown,
   onError,
-}: UseMcpAppOptions) {
+}: UseMcpAppOptions) => {
   const [toolResult, setToolResult] = useState<CallToolResult | null>(null)
   const [hostContext, setHostContext] = useState<McpUiHostContext>()
 
@@ -85,10 +84,7 @@ export function useMcpApp({
       }
 
       app.onhostcontextchanged = (params) => {
-        setHostContext((prev) => ({
-          ...prev,
-          ...params,
-        }))
+        setHostContext((prev) => ({ ...prev, ...params }))
 
         return handlersRef.current.onHostContextChanged?.(params)
       }
