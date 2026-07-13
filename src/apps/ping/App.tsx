@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { Button, Checkbox } from "@headlessui/react"
+import { Button } from "@headlessui/react"
 
 import type { App as McpApp, McpUiHostContext } from "@modelcontextprotocol/ext-apps"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types"
@@ -79,7 +79,6 @@ const PingCard = ({ toolResult }: PingCardProps) => {
 export default function App() {
   const [pingResult, setPingResult] = useState<CallToolResult | null>(null)
   const [requestError, setRequestError] = useState<string | null>(null)
-  const [withElicit, setWithElicit] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
   const { app, error, hostContext } = useMcpApp({
@@ -107,7 +106,7 @@ export default function App() {
     },
   })
 
-  const sendElicit = async () => {
+  const sendPing = async () => {
     if (!app) {
       return
     }
@@ -119,9 +118,7 @@ export default function App() {
     try {
       const result = await app.callServerTool({
         name: "ping",
-        arguments: {
-          with_elicit: withElicit,
-        },
+        arguments: {},
       })
 
       setPingResult(result)
@@ -161,31 +158,9 @@ export default function App() {
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-4">
-            <Checkbox
-              checked={withElicit}
-              onChange={setWithElicit}
-              className="group flex items-center gap-2 text-sm font-medium text-slate-700"
-            >
-              <span className="flex size-4 items-center justify-center rounded border border-slate-300 bg-white transition group-data-[checked]:border-slate-900 group-data-[checked]:bg-slate-900">
-                <svg
-                  className="hidden size-3 text-white group-data-[checked]:block"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                >
-                  <path
-                    d="M2 6l3 3 5-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              Elicit
-            </Checkbox>
             <Button
               type="button"
-              onClick={() => void sendElicit()}
+              onClick={() => void sendPing()}
               disabled={isSending}
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >

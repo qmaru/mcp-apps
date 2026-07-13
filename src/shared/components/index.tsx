@@ -11,7 +11,7 @@ type MessageCardProps = {
 export const MessageCard = ({ children }: MessageCardProps) => {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6">
-      <main className="flex flex-1 items-center justify-center">{children}</main>
+      <main className="flex flex-col gap-4">{children}</main>
     </div>
   )
 }
